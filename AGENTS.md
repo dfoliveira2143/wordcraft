@@ -94,3 +94,9 @@ Progress docs follow [`craftrules/standards/progress-docs.md`](https://github.co
   GitHub profiles). Never hand-edit `contributors.json`.
 - Maintainers refresh the stats with `python3 ../../craftrules/scripts/contributors.py .` (it also
   re-verifies who wrote each `people.toml` entry; `--check` only verifies).
+
+## Base de documentação do agente
+
+Última atualização desta seção: 2026-10-28.
+
+Antes de iniciar qualquer tarefa, consulte [docs/INDEX.md](docs/INDEX.md) e siga o [ciclo de manutenção](docs/agent-guide/maintenance.md). Ao concluir ou interromper, atualize as fontes afetadas, suas datas e o ponto de retomada; corrija informação desatualizada comprovada ou registre a lacuna. A base versionada deve permitir retomar o trabalho sem depender do chat ou de `plan/` e `log/` locais. As regras obrigatórias deste AGENTS.md continuam prevalecendo.

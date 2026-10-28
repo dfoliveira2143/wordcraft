@@ -395,3 +395,9 @@ Forks and modified versions must remove them.
   <a href="https://getartcraft.com/"><img alt="ArtCraft" src="docs/brand/artcraft-mark.svg" width="28"></a><br>
   <sub>Made by the <a href="https://getartcraft.com/">ArtCraft</a> team and community.</sub>
 </p>
+
+## Documentação para agentes
+
+Última atualização desta seção: 2026-10-28.
+
+Comece pelo [índice de documentação](docs/INDEX.md): visão geral, funcionalidades, padrões, operação, decisões e rotina de manutenção para retomar o projeto em uma nova sessão.
