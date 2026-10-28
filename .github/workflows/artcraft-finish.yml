@@ -1,0 +1,45 @@
+name: Artcraft finish
+on:
+  workflow_run:
+    workflows:
+    - Artcraft checks
+    types:
+    - completed
+permissions:
+  contents: read
+concurrency:
+  group: artcraft-upstream-integration
+  cancel-in-progress: false
+jobs:
+  sync:
+    if: github.repository_owner == 'dfoliveira2143' && (vars.ARTCRAFT_SYNC_ENABLED == 'true')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: artcraft-sync
+    permissions:
+      contents: read
+    steps:
+    - name: Repository-scoped temporary App token
+      id: app
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
+      with:
+        client-id: Iv23libeoM9dOsmA3vSp
+        private-key: ${{ secrets.ARTCRAFT_APP_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+        repositories: ${{ github.event.repository.name }}
+        permission-actions: write
+        permission-contents: write
+        permission-statuses: write
+        permission-issues: write
+        permission-pull-requests: write
+        permission-workflows: write
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        ref: main
+        fetch-depth: 0
+        token: ${{ steps.app.outputs.token }}
+    - name: Run trusted synchronization controller
+      env:
+        GH_TOKEN: ${{ steps.app.outputs.token }}
+        ARTCRAFT_VERIFY_APP: 'false'
+      run: "cp .github/artcraft-sync.py \"$RUNNER_TEMP/artcraft-sync.py\"\npython3 \"$RUNNER_TEMP/artcraft-sync.py\"\n"
