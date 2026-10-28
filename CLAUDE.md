@@ -1,10 +1,14 @@
 # WordCraft — instructions for agents
 
+## Politica de validacao local
+
+Siga a politica obrigatoria de [validacao documental e confirmacao para testes](AGENTS.md#validacao-documental-e-confirmacao-para-testes). Commits exclusivamente documentais elegiveis usam revisao do diff, `git diff --check`, conferencia de links locais e coerencia das instrucoes; informe a dispensa da validacao completa. Testes, compilacao, lint de codigo e CI exigem explicacao previa de necessidade e alcance e confirmacao explicita do usuario antes de executar. Comandos e rotinas abaixo estao sujeitos a essa politica, inclusive verificacoes iniciais; autonomia nao dispensa essa confirmacao.
+
 WordCraft is a clean-room, open-source, Rust-native word processor targeting Microsoft Word parity — and going further on speed, openness and agent control. It runs natively on macOS, Windows, Linux and BSD, and on the web via WASM. Siblings with the same conventions: `../photocraft` (Photoshop), `../vectorcraft` (Illustrator), `../filmcraft` (Premiere), `../lightcraft` (Lightroom), `../pdfcraft` (Acrobat), `../effectcraft` (After Effects), `../designcraft` (InDesign). Shared rules and learnings: [`storytold/craftrules`](https://github.com/storytold/craftrules) (`../../craftrules`) — read its `AGENTS.md`.
 
 ## Start every session here
 1. Read `plan/STATUS.md` (current milestone, next task), then the task in `plan/execution-plan.md` and the relevant `plan/architecture.md` section. `plan/` is gitignored (local only); if it's missing, start from `ROADMAP.md`, `docs/gaps.md` and `docs/roadmap.md` (Current focus).
-2. Follow the autonomous operation protocol (`plan/execution-plan.md` §5). Don't stop to ask unless a decision is genuinely the owner's (licensing, publishing, pushing to new remotes, secrets).
+2. Follow the autonomous operation protocol (`plan/execution-plan.md` §5). Ask for explicit user confirmation before tests or code validation as required by AGENTS.md; otherwise follow the autonomy protocol.
 
 ## Never crash
 People trust WordCraft with their writing; a crash loses their work. **This outranks feature work**: never ship a feature through a panic path, and fix a crash before building on top of it. Standard: [`craftrules/standards/never-crash.md`](https://github.com/storytold/craftrules/blob/main/standards/never-crash.md).
@@ -46,7 +50,7 @@ People trust WordCraft with their writing; a crash loses their work. **This outr
 - **Rust only** (no handwritten JS/TS). **Never break wasm** (`cargo xtask wasm`).
 
 ## Quality gates
-Before every commit: `cargo xtask ci` (fmt, clippy -D warnings, tests, assets, layers, wasm). Commit after every arc of work that builds, with a task id in the message (`M2.1: line spacing dialog`).
+Before commits requiring code validation (subject to the documentation exception and explicit user confirmation in AGENTS.md): `cargo xtask ci` (fmt, clippy -D warnings, tests, assets, layers, wasm). Commit after every arc of work that builds, with a task id in the message (`M2.1: line spacing dialog`).
 
 ## Typing behaves like Word
 Typing, Enter, Backspace, Tab, lists, AutoCorrect and AutoFormat follow Word's observed behaviour in [`docs/typing-parity.md`](docs/typing-parity.md), pinned by `crates/engine/src/tests/typing.rs` (keys go through the same commands as the keyboard). Change behaviour, doc and tests together; a typing fix lands with a test there. Compare headlessly (`ui_shot`); don't drive GUIs with keystrokes on the shared machine.
