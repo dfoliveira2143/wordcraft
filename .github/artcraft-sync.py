@@ -21,7 +21,9 @@ MAIN = "main"
 PREFIX = "sync/upstream-"
 CONTEXT = "artcraft/validated"
 APP_BOT = "upstream-sync-dfoliveira2143[bot]"
-PROTECTED = [".github/workflows", ".github/artcraft-sync.py"]
+PROTECTED = [".github/artcraft-sync.py", ".github/test_artcraft_sync.py",
+             ".github/workflows/artcraft-sync.yml", ".github/workflows/artcraft-finish.yml",
+             ".github/workflows/artcraft-check.yml"]
 
 
 def api(route, method="GET", body=None):
@@ -47,7 +49,10 @@ def status(sha, state, description, url):
         "context": CONTEXT, "state": state, "description": description[:140], "target_url": url})
 
 
-def pull_request(branch, reason, url):
+def pull_request(branch, reason, url, *, conflict=False):
+    if not conflict:
+        print(f"Sincronizacao pendente: {reason}. Execucao: {url}")
+        return None
     query = urlencode({"state": "open", "head": f"{OWNER}:{branch}", "base": MAIN})
     prs = api(f"repos/{REPO}/pulls?{query}")
     body = (f"@{OWNER}, a atualização oficial precisa de intervenção.\n\n{reason}\n\n"
@@ -56,7 +61,7 @@ def pull_request(branch, reason, url):
             "Revise esta branch e os testes antes de integrar.\n\n"
             "<!-- artcraft-upstream-sync -->")
     if prs:
-        api(f"repos/{REPO}/pulls/{prs[0]['number']}", "PATCH", {"body": body})
+        # One notification per conflict branch; preserve human discussion.
         return prs[0]["number"]
     pr = api(f"repos/{REPO}/pulls", "POST", {
         "title": "Atualização oficial: intervenção necessária", "head": branch,
@@ -65,15 +70,8 @@ def pull_request(branch, reason, url):
 
 
 def notify_error(reason, url):
-    # Also covers infrastructure/API failures before a candidate could be created.
-    issues = api(f"repos/{REPO}/issues?state=open&creator={APP_BOT}&per_page=100")
-    title = "Sincronização oficial: falha de infraestrutura"
-    body = f"@{OWNER}\n\n{reason}\n\nExecução: {url}\n\nNenhum histórico foi sobrescrito."
-    old = next((i for i in issues if i["title"] == title and "pull_request" not in i), None)
-    if old:
-        api(f"repos/{REPO}/issues/{old['number']}", "PATCH", {"body": body})
-    else:
-        api(f"repos/{REPO}/issues", "POST", {"title": title, "body": body})
+    # Keep non-conflict failures in Actions logs, without mentions or issues.
+    print(f"Sincronizacao pendente: {reason}. Execucao: {url}", file=sys.stderr)
 
 
 def ancestor(a, b):
@@ -95,8 +93,7 @@ def prepare(url):
         return
     common = git("merge-base", base, upstream)
     if git("diff", "--name-only", common, upstream, "--", *PROTECTED):
-        # Do not publish unreviewed workflows even on a candidate/conflict branch:
-        # an App push can trigger newly introduced workflows immediately.
+        # Official workflows may evolve; only our integration machinery is protected.
         notify_error("A origem alterou workflows ou o controlador. Revisão manual necessária antes de publicar uma proposta.", url)
         return
     branch = f"{PREFIX}{upstream[:12]}-{base[:12]}"
@@ -122,7 +119,7 @@ def prepare(url):
             if not conflicts:
                 raise RuntimeError("Não foi possível preparar a integração: " + merge.stderr)
             git("push", "origin", f"{upstream}:refs/heads/{branch}")
-            pull_request(branch, "Conflitos detectados:\n```text\n" + conflicts + "\n```", url)
+            pull_request(branch, "Conflitos detectados:\n```text\n" + conflicts + "\n```", url, conflict=True)
             return
         sha = git("rev-parse", "HEAD")
         git("push", "origin", f"{sha}:refs/heads/{branch}")
@@ -193,11 +190,6 @@ def finish(event, url):
     if pushed.returncode:
         pull_request(branch, "Publicação bloqueada por proteção de branch, concorrência ou permissão:\n```text\n" + pushed.stderr[-3000:] + "\n```", url)
         return
-    query = urlencode({"state": "open", "head": f"{OWNER}:{branch}", "base": MAIN})
-    for pr in api(f"repos/{REPO}/pulls?{query}"):
-        # GitHub usually marks this PR merged automatically after the push; never delete it.
-        api(f"repos/{REPO}/issues/{pr['number']}/comments", "POST", {
-            "body": f"Integrado após todas as verificações: {run['html_url']}"})
     print(f"Integrado {sha}, preservando os dois históricos.")
 
 
