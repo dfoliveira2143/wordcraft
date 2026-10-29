@@ -29,6 +29,8 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         persist-credentials: false
+    - name: Synchronization regression tests
+      run: python3 .github/test_artcraft_sync.py
     - name: Pinned official fonts
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
