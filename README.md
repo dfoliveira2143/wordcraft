@@ -1,11 +1,4 @@
-<p align="center">
-  <a href="https://getartcraft.com/">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/brand/artcraft-logo-white.svg">
-      <img alt="ArtCraft" src="docs/brand/artcraft-logo.svg" width="200">
-    </picture>
-  </a>
-</p>
+> **Creative Workshop — independent edition.** Based on wordcraft by the ArtCraft team and contributors. Not affiliated with, endorsed by, or supported by ArtCraft. [Origin and branding policy](docs/branding.md).
 
 <p align="center">
   <img src="assets/app-icon/hicolor/256x256/apps/ai.storyteller.wordcraft.png" width="128" height="128" alt="WordCraft icon: a document page and pen on a blue tile">
@@ -21,7 +14,7 @@
   A fast, open-source word processor with a familiar workflow: the ribbon, styles,
   tables, track changes, references and mail merge. It reads and writes .docx, runs natively on
   macOS, Windows, Linux and BSD, and in the browser via WebAssembly.<br>
-  <i>By the ArtCraft team.</i>
+  <i>Creative Workshop — independent edition.</i>
 </p>
 
 <p align="center">
@@ -30,18 +23,13 @@
   <img alt="License: MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20%2F%20Apache--2.0-2b47b5?style=flat-square">
   <img alt="Agent-drivable over MCP" src="https://img.shields.io/badge/agents-MCP%20%C2%B7%20CLI-3b5bdb?style=flat-square">
   <br>
-  <a href="https://sonarcloud.io/project/overview?id=storytold_wordcraft"><img alt="Scanned by SonarCloud" src="https://img.shields.io/badge/Scanned_by-SonarCloud-4b9fd5?style=flat-square&logo=sonarqubecloud&logoColor=white"></a>
-  <a href="https://coderabbit.ai"><img alt="Reviewed by CodeRabbit" src="https://img.shields.io/coderabbit/prs/github/storytold/wordcraft?style=flat-square&label=Reviewed%20by%20CodeRabbit&logo=coderabbit"></a>
 </p>
 
-<p align="center">
-  <a href="https://discord.gg/artcraft"><img alt="Join the ArtCraft community on Discord" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
-</p>
 
 <p align="center">
-  <a href="https://getartcraft.com/apps/wordcraft"><b>WordCraft on getartcraft.com</b></a> ·
-  <a href="https://getartcraft.com/">ArtCraft</a> ·
-  <a href="https://getartcraft.com/apps">All Crafting Apps</a>
+  <a href="https://github.com/dfoliveira2143/wordcraft"><b>WordCraft on github.com/dfoliveira2143</b></a> ·
+  <a href="https://github.com/dfoliveira2143">Creative Workshop</a> ·
+  <a href="https://github.com/dfoliveira2143">All Crafting Apps</a>
 </p>
 
 <br>
@@ -51,10 +39,6 @@
   <br><sub><b>The Open Studio Handbook</b>, WordCraft's built-in sample: the ribbon, live Styles gallery, rulers and the Navigation pane.</sub>
 </p>
 
-> [!NOTE]
-> **ArtCraft is a community of artists from all walks of life.** Painters, photographers,
-> filmmakers, illustrators, designers, animators, hobbyists, and people who picked up a pencil
-> last week. If you make things, you're one of us. **[Come say hi on Discord](https://discord.gg/artcraft).**
 
 <p align="center">
   <a href="#a-tour">A tour</a> ·
@@ -134,7 +118,7 @@ The honest picture, area by area, is in [ROADMAP.md](ROADMAP.md), the
 ## Quick start
 
 ```sh
-git clone https://github.com/storytold/wordcraft
+git clone https://github.com/dfoliveira2143/wordcraft
 cd wordcraft
 cargo run --release -p wordcraft -- --sample        # the desktop app with the sample document
 cargo run --release -p wordcraft -- report.docx     # open a document
@@ -217,7 +201,9 @@ closer pagination fidelity, a stability sweep and native printing. Details and e
 
 ## Downloads
 
-**Download WordCraft** from GitHub: the [latest release](https://github.com/storytold/wordcraft/releases/latest) has every build listed below, and [all releases](https://github.com/storytold/wordcraft/releases) has earlier versions and their notes. `<ver>` in the file names is the version number, and `SHA256SUMS.txt` lists a checksum for every file.
+Creative Workshop packages have not yet been rebuilt or validated. The inherited platform instructions below describe packaging capabilities, not a guarantee that a release is available or signed.
+
+**Download WordCraft** from GitHub: the [latest release](https://github.com/dfoliveira2143/wordcraft/releases/latest) has every build listed below, and [all releases](https://github.com/dfoliveira2143/wordcraft/releases) has earlier versions and their notes. `<ver>` in the file names is the version number, and `SHA256SUMS.txt` lists a checksum for every file.
 
 ### Windows
 
@@ -228,8 +214,8 @@ closer pagination fidelity, a stability sweep and native printing. Details and e
 | x86 (32-bit) | `wordcraft-<ver>-windows-x86.msi` | `wordcraft-<ver>-windows-x86-portable.zip` |
 
 The installer is one dual-scope package. By default it installs for your account only,
-into `%LOCALAPPDATA%\Programs\ArtCraft\WordCraft`, and needs no administrator rights; choosing
-"Everyone on this computer" on the first page installs into `C:\Program Files\ArtCraft\WordCraft` (`Program Files (x86)` for the 32-bit build)
+into `%LOCALAPPDATA%\Programs\Creative Workshop\WordCraft`, and needs no administrator rights; choosing
+"Everyone on this computer" on the first page installs into `C:\Program Files\Creative Workshop\WordCraft` (`Program Files (x86)` for the 32-bit build)
 and asks for an administrator. Install only one copy: a copy for another scope is refused, so
 uninstall first to change who WordCraft is installed for. Installers and executables are code-signed.
 
@@ -332,44 +318,7 @@ emerge --ask app-office/wordcraft-bin
 
 ## The Crafting Apps
 
-WordCraft is one of the **Crafting Apps**: free, open-source creative tools from the
-[ArtCraft](https://getartcraft.com/) team, each written from scratch in Rust and each able to
-stand on its own.
-
-| | App | What it's for | Code | Learn more |
-|:-:|---|---|---|---|
-| <img src="https://raw.githubusercontent.com/storytold/photocraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.photocraft.png" alt="" width="32" height="32"> | **PhotoCraft** | Image editing: layers, masks, type and real PSD files | [GitHub](https://github.com/storytold/photocraft) | [Website](https://getartcraft.com/apps/photocraft) |
-| <img src="https://raw.githubusercontent.com/storytold/vectorcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.vectorcraft.png" alt="" width="32" height="32"> | **VectorCraft** | Vector illustration | [GitHub](https://github.com/storytold/vectorcraft) | [Website](https://getartcraft.com/apps/vectorcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/filmcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.filmcraft.png" alt="" width="32" height="32"> | **FilmCraft** | Video editing, color and sound | [GitHub](https://github.com/storytold/filmcraft) | [Website](https://getartcraft.com/apps/filmcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/lightcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.lightcraft.png" alt="" width="32" height="32"> | **LightCraft** | Photo library and raw development | [GitHub](https://github.com/storytold/lightcraft) | [Website](https://getartcraft.com/apps/lightcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/pdfcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.pdfcraft.png" alt="" width="32" height="32"> | **PdfCraft** | Reading, organizing and protecting PDFs | [GitHub](https://github.com/storytold/pdfcraft) | [Website](https://getartcraft.com/apps/pdfcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/effectcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.effectcraft.png" alt="" width="32" height="32"> | **EffectCraft** | Motion graphics and visual effects | [GitHub](https://github.com/storytold/effectcraft) | [Website](https://getartcraft.com/apps/effectcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/designcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.designcraft.png" alt="" width="32" height="32"> | **DesignCraft** | Page layout and publishing | [GitHub](https://github.com/storytold/designcraft) | [Website](https://getartcraft.com/apps/designcraft) |
-| <img src="https://raw.githubusercontent.com/storytold/wordcraft/main/assets/app-icon/hicolor/64x64/apps/ai.storyteller.wordcraft.png" alt="" width="32" height="32"> | **WordCraft** | **Writing and document design · you are here** | [GitHub](https://github.com/storytold/wordcraft) | [Website](https://getartcraft.com/apps/wordcraft) |
-
-And [**ArtCraft**](https://getartcraft.com/) itself, our AI image and video studio for artists who want real control.
-
-<br>
-
-<p align="center">
-  <a href="https://discord.gg/artcraft"><img alt="Join the ArtCraft community on Discord" src="https://img.shields.io/badge/Join%20us%20on%20Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" height="40"></a>
-</p>
-
-<h3 align="center">Come make things with us</h3>
-
-<p align="center">
-  Our Discord is where artists of every kind hang out: people who paint, shoot, draw, cut film,
-  set type, and people still figuring out what they like to make. Share what you're working on,
-  ask for help, tell us what's broken, or tell us what you wish these tools could do.
-  Whatever your medium and however long you've been at it, you're welcome here.
-</p>
-
-<p align="center">
-  <a href="https://discord.gg/artcraft"><b>discord.gg/artcraft</b></a> ·
-  <a href="https://getartcraft.com/">getartcraft.com</a> ·
-  <a href="https://getartcraft.com/apps">The Crafting Apps</a> ·
-  <a href="https://getartcraft.com/apps/wordcraft">WordCraft</a>
-</p>
+This independent edition belongs to **Creative Workshop**. It is not an official ArtCraft product.
 
 ## License and credits
 
@@ -386,15 +335,8 @@ do Russian, Portuguese, Czech, Italian, Croatian and Turkish spelling (how to in
 Polish hyphenation the TeX patterns by Hanna Kołodziejska, Bogusław Jackowski and Marek Ryćko (MIT
 option). The sample documents and templates are original text written for WordCraft.
 
-The ArtCraft name, wordmark and logos in [`docs/brand/`](docs/brand/) are trademarks of the
-ArtCraft Team and are not covered by this license. They may be used only unmodified, and only as
-part of this repository and WordCraft, under [`docs/brand/LICENSE-brand.txt`](docs/brand/LICENSE-brand.txt).
-Forks and modified versions must remove them.
+The restricted ArtCraft brand assets are excluded from this edition. Original trademark terms remain in [docs/brand/LICENSE-brand.txt](docs/brand/LICENSE-brand.txt); see [branding policy](docs/branding.md).
 
-<p align="center">
-  <a href="https://getartcraft.com/"><img alt="ArtCraft" src="docs/brand/artcraft-mark.svg" width="28"></a><br>
-  <sub>Made by the <a href="https://getartcraft.com/">ArtCraft</a> team and community.</sub>
-</p>
 
 ## Documentação para agentes
 

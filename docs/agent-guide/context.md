@@ -36,3 +36,7 @@ Essas são pendências da base, não novos bugs confirmados do produto. Limitaç
 No documento do assunto (ou em ADR quando envolver várias áreas), registre: data; problema; alternativas consideradas; decisão e motivo; consequências; limites; evidência; links para implementação e verificações. Adicione aqui apenas a referência. Uma hipótese deve ser distinguida de uma decisão aceita.
 
 [Voltar ao índice](../INDEX.md).
+
+## Identidade independente — 2026-10-28
+
+A edição local usa Creative Workshop. Consulte a [política de identidade](../branding.md) antes de integrar alterações upstream ou gerar uma distribuição. A validação de código e a reconstrução dos pacotes dependem de autorização; os binários existentes não foram atualizados.

@@ -47,3 +47,5 @@ Os guias são mapas de navegação, não novas cópias dos contratos técnicos. 
 - [Typing parity with Word](typing-parity.md)
 - [UI parity with Microsoft Word](ui-parity.md)
 - [Zotero](zotero.md)
+
+- [Creative Workshop: origem, identidade e publicação](branding.md)

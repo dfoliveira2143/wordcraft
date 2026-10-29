@@ -738,7 +738,7 @@ impl WordApp {
                 ));
             }
             "ui.discord" => {
-                self.canvas.open_url = Some("https://discord.gg/artcraft".into());
+                self.canvas.open_url = Some("https://github.com/dfoliveira2143/wordcraft/issues".into());
                 json!({})
             }
             "ui.caretAnimation" => {
