@@ -1,4 +1,6 @@
-use super::*;
+use super::{
+    ChangeAttrs, CharProps, InlineObject, Paragraph, PartRels, Piece, PropChange, RevisionKind, W, Writer, open_change, ppr_inner, rpr, rpr_inner, rt,
+};
 
 impl Writer<'_> {
     pub(super) fn para(&mut self, w: &mut W, p: &Paragraph, rels: &mut PartRels, top: bool, depth: usize) {
@@ -292,7 +294,7 @@ impl Writer<'_> {
     }
 
     /// `w:id`, `w:author` and `w:date` of a tracked change by revision `idx`.
-    pub(super) fn change_attrs(&mut self, idx: u32) -> ChangeAttrs {
+    pub(in crate::write) fn change_attrs(&mut self, idx: u32) -> ChangeAttrs {
         let (id, author, date) = self.rev_attrs(idx);
         let mut a = vec![("w:id", id), ("w:author", author)];
         if !date.is_empty() {
