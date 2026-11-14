@@ -2,10 +2,17 @@
 
 use serde_json::{Value, json};
 use wordcraft_doc::edit::Fragment;
-use wordcraft_doc::{Pos, StoryRef};
+use wordcraft_doc::{Path, Pos, StoryRef};
 
 use super::{delete_selection, find_pattern, pos_json, sel_result};
 use crate::{CmdError, CmdResult, CommandSpec, Selection, Session, p};
+
+/// Browsers reserve Mod+Shift+C for their inspector. Keep the desktop binding, but
+/// advertise a web alternative through the same registry/keymap as every other command.
+/// Mod+Alt+C already inserts copyright, and Mod+Alt+Shift+V is Keep Text Only.
+fn copy_format_shortcut(web: bool) -> &'static str {
+    if web { "Mod+Alt+Shift+C / Mod+Shift+C" } else { "Mod+Shift+C" }
+}
 
 /// Undo several steps at once: the Undo button's list (#701). `count` is validated here and
 /// clamped to the undo depth, so hostile numbers never reach the stack.
@@ -27,8 +34,14 @@ fn undo_to(s: &mut Session, v: &Value) -> CmdResult {
     Ok(r)
 }
 
-fn has_sel(s: &Session) -> Option<&'static str> {
+/// Something the Spike can collect: text (it doesn't take empty cells).
+fn has_text_sel(s: &Session) -> Option<&'static str> {
     if s.sel.is_collapsed() { Some("nothing is selected") } else { None }
+}
+
+/// Something to cut: text, or whole table cells (an empty cell's selection has no length, #1744).
+fn has_sel(s: &Session) -> Option<&'static str> {
+    if s.sel.is_collapsed() && s.cell_range().is_none() { Some("nothing is selected") } else { None }
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -63,7 +76,7 @@ pub fn specs() -> Vec<CommandSpec> {
         CommandSpec::new("edit.copy", "Copy", "Home › Clipboard", copy).key("Mod+C / Mod+Insert").pure(),
         // Word's Spike (Ctrl+F3, Ctrl+Shift+F3; ⌘ on the Mac): the AutoText entry "Spike", so Quick
         // Parts and AutoText insert it without emptying it, as in Word.
-        CommandSpec::new("edit.spike", "Spike", "Editing", spike).key("Mod+F3").when(has_sel),
+        CommandSpec::new("edit.spike", "Spike", "Editing", spike).key("Mod+F3").when(has_text_sel),
         CommandSpec::new("edit.insertSpike", "Insert Spike", "Editing", insert_spike).key("Mod+Shift+F3").when(|s| {
             if s.math.is_some() {
                 Some("leave the equation first")
@@ -73,12 +86,14 @@ pub fn specs() -> Vec<CommandSpec> {
                 Some("the Spike is empty")
             }
         }),
-        CommandSpec::new("edit.paste", "Paste", "Home › Clipboard", paste).key("Mod+V / Shift+Insert").params(r#"{"text"?: string, "html"?: string, "rtf"?: string}"#),
+        CommandSpec::new("edit.paste", "Paste", "Home › Clipboard", paste)
+            .key("Mod+V / Shift+Insert")
+            .params(r#"{"text"?: string, "html"?: string, "rtf"?: string, "privateClipboard"?: bool}"#),
         CommandSpec::new("edit.pasteText", "Paste: Keep Text Only", "Home › Clipboard › Paste", paste_text)
             .params(r#"{"text"?: string}"#)
             .key("Mod+Shift+Alt+V"),
         CommandSpec::new("edit.pasteMerge", "Paste: Merge Formatting", "Home › Clipboard › Paste", paste_merge)
-            .params(r#"{"text"?: string, "html"?: string, "rtf"?: string}"#),
+            .params(r#"{"text"?: string, "html"?: string, "rtf"?: string, "privateClipboard"?: bool}"#),
         CommandSpec::new("edit.clipboardPane", "Clipboard Pane", "Home › Clipboard", |s, v| {
             let on = p::bool(v, "value").unwrap_or(!s.view.clipboard_pane);
             s.view.clipboard_pane = on;
@@ -160,18 +175,32 @@ pub fn specs() -> Vec<CommandSpec> {
             painter_pick(s);
             sel_result(s)
         })
-        .key("Mod+Shift+C")
+        .key(copy_format_shortcut(cfg!(target_arch = "wasm32")))
         .pure(),
         CommandSpec::new("edit.pasteFormat", "Paste Formatting", "Home › Clipboard", paste_format).key("Mod+Shift+V"),
     ]
 }
 
 fn copy(s: &mut Session, _: &Value) -> CmdResult {
+    let whole = super::table::selected_table(s);
+    copy_with(s, whole.as_ref())
+}
+
+/// Copy, `whole` being the table the selection covers whole, if it does.
+fn copy_with(s: &mut Session, whole: Option<&Path>) -> CmdResult {
     let (a, b) = s.sel.ordered();
-    if a == b {
-        return Ok(json!({"text": ""}));
-    }
-    let f = s.doc.copy_range(&a, &b);
+    // Whole table cells selected copy as a table, even empty ones (their selection has no
+    // length): the whole table, or a table of just the selected rows or cells (#1744).
+    let table = match (whole, s.cell_range()) {
+        (Some(tp), _) => s.doc.copy_block(a.story, tp),
+        (None, Some(r)) => s.doc.copy_table_cells(r.story, &r.table, r.rows, r.cols),
+        (None, None) => None,
+    };
+    let f = match table {
+        Some(f) => f,
+        None if a == b => return Ok(json!({"text": ""})),
+        None => s.doc.copy_range(&a, &b),
+    };
     s.clipboard_text = f.clipboard_text();
     s.clip_history.push(&f, &s.clipboard_text);
     s.clipboard = Some(f);
@@ -179,16 +208,24 @@ fn copy(s: &mut Session, _: &Value) -> CmdResult {
 }
 
 /// What Copy and Cut return: the clipboard's text, and the copy as HTML (equations as MathML,
-/// #816) for the host to put on the system clipboard too, so other programs keep the formatting;
-/// and for a copy of one equation alone, its MathML (#1297).
+/// #816) and as RTF for the host to put on the system clipboard too, so other programs keep the
+/// formatting; and for a copy of one equation alone, its MathML (#1297).
 pub(crate) fn copy_result(s: &mut Session) -> Value {
-    s.clipboard_html = match &s.clipboard {
-        Some(f) => wordcraft_formats::html::export_fragment(&f.to_document()),
-        None => String::new(),
+    (s.clipboard_html, s.clipboard_rtf) = match &s.clipboard {
+        Some(f) => {
+            let mut d = f.to_document();
+            if d.media.is_empty() {
+                d.media = s.doc.media.clone();
+            }
+            (wordcraft_formats::html::export_fragment(&d), wordcraft_formats::rtf::export(&d))
+        }
+        None => (String::new(), String::new()),
     };
     let mut r = json!({"text": s.clipboard_text});
-    if !s.clipboard_html.is_empty() {
-        r["html"] = json!(s.clipboard_html);
+    for (k, v) in [("html", &s.clipboard_html), ("rtf", &s.clipboard_rtf)] {
+        if !v.is_empty() {
+            r[k] = json!(v);
+        }
     }
     // A copy of one equation alone, as MathML for the clipboard formats equation editors read
     // ("MathML" on Windows, `public.mathml.presentation` on macOS; #1297). Word looks for them
@@ -200,8 +237,26 @@ pub(crate) fn copy_result(s: &mut Session) -> Value {
     r
 }
 
-fn cut(s: &mut Session, v: &Value) -> CmdResult {
-    let r = copy(s, v)?;
+fn cut(s: &mut Session, _: &Value) -> CmdResult {
+    let whole = super::table::selected_table(s);
+    let r = copy_with(s, whole.as_ref())?;
+    // A whole table selected: Cut removes the table, as Delete Table does (#1744). With Track
+    // Changes on, the cut below marks its text deleted (a tracked cut may become a move).
+    if !s.doc.settings.track_changes
+        && let Some(tp) = &whole
+    {
+        super::table::delete_table_at(s, tp)?;
+        super::controls::restore_placeholder(s)?;
+        return Ok(r);
+    }
+    // Whole rows or some cells: their text goes, the rows and cells stay, as in Word.
+    if whole.is_none()
+        && let Some(range) = s.cell_range().cloned()
+    {
+        super::table::clear_range_cells(s, &range)?;
+        super::controls::restore_placeholder(s)?;
+        return Ok(r);
+    }
     // A tracked cut of a paragraph or sentence may become a move when pasted.
     if !super::moves::cut_tracked(s)? {
         delete_selection(s)?;
@@ -318,10 +373,11 @@ impl ClipHistory {
         self.items.is_empty()
     }
 
-    fn push(&mut self, f: &Fragment, text: &str) {
-        // Text plus per-paragraph overhead; pictures are references into the document.
+    pub(crate) fn push(&mut self, f: &Fragment, text: &str) {
+        // Text plus per-paragraph overhead, plus the picture bytes the fragment keeps alive.
         let paras = text.matches('\n').count().saturating_add(f.blocks.len()).saturating_add(f.parts.len()).saturating_add(1);
-        let bytes = text.len().saturating_mul(2).saturating_add(paras.saturating_mul(256));
+        let media = f.media.values().map(|m| m.len()).fold(0, usize::saturating_add);
+        let bytes = text.len().saturating_mul(2).saturating_add(paras.saturating_mul(256)).saturating_add(media);
         if bytes > CLIP_ITEM_BYTES || f.blocks.is_empty() {
             return;
         }
@@ -738,7 +794,7 @@ fn goto(s: &mut Session, v: &Value) -> CmdResult {
     });
     if let Some(pg) = rel.or_else(|| p::u64(v, "page")) {
         let l = s.layout();
-        let idx = (pg.max(1) as usize - 1).min(l.pages.len().saturating_sub(1));
+        let idx = crate::p::page_index(pg).min(l.pages.len().saturating_sub(1));
         let target = l.pages.get(idx).and_then(|page| {
             page.items.iter().find_map(|it| match it {
                 wordcraft_layout::Placed::Lines { story, path, para, l0, .. } if *story == StoryRef::Body => {
@@ -805,7 +861,10 @@ fn paste_format(s: &mut Session, _: &Value) -> CmdResult {
         let f = s.sel.focus.clone();
         if let Some(pp) = s.doc.para_at(&f) {
             let (x, y) = pp.word_at(f.off);
-            s.doc.format_range(&Pos { off: x, ..f.clone() }, &Pos { off: y, ..f.clone() }, &|c| *c = chr.cleared().overlaid(&chr))?;
+            // Word selection includes trailing spaces; a painter click formats just the word,
+            // matching the ordinary collapsed-caret formatting target.
+            let word_end = pp.text.get(x..y).map(|word| x + word.trim_end().len()).unwrap_or(y);
+            s.doc.format_range(&Pos { off: x, ..f.clone() }, &Pos { off: word_end, ..f.clone() }, &|c| *c = chr.cleared().overlaid(&chr))?;
         }
         s.doc.format_paragraphs(&a, &b, &|p| *p = para.clone())?;
     } else {
@@ -822,4 +881,50 @@ fn paste_format(s: &mut Session, _: &Value) -> CmdResult {
         s.painter = None;
     }
     sel_result(s)
+}
+
+#[cfg(test)]
+mod shortcut_tests {
+    use super::*;
+    use crate::{KeyMap, Registry};
+
+    #[test]
+    fn copy_format_web_alias_is_unique_and_keeps_existing_shortcuts() {
+        for web in [false, true] {
+            let mut commands = super::super::registry().all().to_vec();
+            let copy = commands.iter_mut().find(|c| c.id == "edit.copyFormat").unwrap();
+            copy.shortcut = copy_format_shortcut(web);
+            let registry = Registry::new(commands);
+            let mut seen = std::collections::BTreeSet::new();
+            for command in registry.all() {
+                for key in command.shortcut.split(" / ").filter_map(crate::keymap::normalize) {
+                    assert!(seen.insert(key.clone()), "duplicate binding: {key}");
+                }
+            }
+            let keys = KeyMap::default();
+            let resolve = |key| keys.resolve(&registry, key).map(|c| c.id);
+            assert_eq!(resolve("Mod+Shift+C"), Some("edit.copyFormat"));
+            assert_eq!(resolve("Mod+Alt+Shift+C"), web.then_some("edit.copyFormat"));
+            assert_eq!(resolve("Mod+Shift+V"), Some("edit.pasteFormat"));
+            assert_eq!(resolve("Mod+Alt+Shift+V"), Some("edit.pasteText"));
+            if !cfg!(target_os = "macos") {
+                assert_eq!(resolve("Mod+Alt+C"), Some("text.copyright"));
+            }
+        }
+    }
+
+    #[test]
+    fn copy_format_web_alias_respects_user_removal_and_reassignment() {
+        let mut commands = super::super::registry().all().to_vec();
+        commands.iter_mut().find(|c| c.id == "edit.copyFormat").unwrap().shortcut = copy_format_shortcut(true);
+        let registry = Registry::new(commands);
+        let mut keys = KeyMap::default();
+        assert_eq!(keys.keys_for(&registry, "edit.copyFormat").first().map(String::as_str), Some("Mod+Alt+Shift+C"));
+        assert!(keys.remove(&registry, "edit.copyFormat", "Mod+Alt+Shift+C").unwrap());
+        assert!(keys.resolve(&registry, "Mod+Alt+Shift+C").is_none());
+        keys.assign(&registry, "format.bold", "Mod+Alt+Shift+C").unwrap();
+        let restored = KeyMap::from_value(&serde_json::to_value(&keys).unwrap());
+        assert_eq!(restored.resolve(&registry, "Mod+Alt+Shift+C").map(|c| c.id), Some("format.bold"));
+        assert_eq!(restored.resolve(&registry, "Mod+Shift+C").map(|c| c.id), Some("edit.copyFormat"));
+    }
 }
