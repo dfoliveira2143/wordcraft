@@ -1,4 +1,4 @@
-use super::*;
+use super::{Fill, FillRule, LineCap, NormalizedF32, Paint, Path, PathBuilder, Rect, Rgb, ShapeKind, Stroke, Surface, Transform, krilla, rgb};
 
 /// Largest page side we write (200", the PDF limit).
 const MAX_SIDE: f32 = 14_400.0;
@@ -89,13 +89,10 @@ pub(crate) fn grown(r: &Rect, g: f32, dx: f32, dy: f32) -> Rect {
 /// blur as the raster renderer, see [`wordcraft_doc::effects::bands`]).
 pub(crate) fn shape_effects(
     s: &mut Surface,
-    kind: ShapeKind,
-    corner: Option<u32>,
+    (kind, corner): (ShapeKind, Option<u32>),
     rect: &Rect,
     fx: &wordcraft_doc::effects::ShapeEffects,
-    filled: bool,
-    stroked: bool,
-    sw: f32,
+    (filled, stroked, sw): (bool, bool, f32),
 ) {
     let sw = if sw.is_finite() { sw.clamp(0.25, 200.0) } else { 0.75 };
     let silhouette = |s: &mut Surface, c: Rgb, a: f32, g: f32, dx: f32, dy: f32| {
@@ -219,6 +216,15 @@ pub(crate) fn shape_path(kind: ShapeKind, r: &Rect, corner: Option<u32>) -> Opti
             pb.cubic_to(cx + w * 0.1, y0 + h * 0.75, x1, y0 + h * 0.6, x1, y0 + h * 0.3);
             pb.cubic_to(x1, y0, cx, y0, cx, y0 + h * 0.3);
             pb.close();
+        }
+        // The outer rectangle and the hole wound the other way: a hole under either fill rule.
+        ShapeKind::Frame => {
+            poly(&mut pb, &[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]);
+            let t = wordcraft_doc::connector::frame_width(corner, r.w, r.h);
+            let (i0, j0, i1, j1) = (x0 + t, y0 + t, x1 - t, y1 - t);
+            if i1 > i0 && j1 > j0 {
+                poly(&mut pb, &[(i0, j0), (i0, j1), (i1, j1), (i1, j0)]);
+            }
         }
     }
     pb.finish()
